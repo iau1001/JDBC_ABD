@@ -50,6 +50,7 @@ public class GestionMedicos {
 		PoolDeConexiones pool = PoolDeConexiones.getInstance();
 		Connection con=null;
 		PreparedStatement st_select = null;
+		PreparedStatement st_insert = null;
 		ResultSet rs = null;
 
 	
@@ -64,22 +65,34 @@ public class GestionMedicos {
 				throw new GestionMedicosException(GestionMedicosException.MEDICO_NO_EXISTE);
 			int num_medico = rs.getInt(1);
 			
+			//Se inserta la nueva consulta.
+			java.sql.Date m_sqlFecha= new java.sql.Date(m_Fecha_Consulta.getTime());
+			st_insert = con.prepareStatement("INSERT INTO CONSULTA VALUES (seq_consulta.nextval,?,?,?)");
+			st_insert.setDate(1, m_sqlFecha);
+			st_insert.setInt(2, num_medico);
+			st_insert.setString(3,m_NIF_cliente);
+			st_insert.executeUpdate();
+			
 		} catch (SQLException e) {
 			//Rollback con cualquier error.
 			con.rollback();
 			//Relanzar excepción.
 			if (e instanceof GestionMedicosException)
 				throw (GestionMedicosException)e;			
-			
+			//Si insertar la consulta levanta la excepción 'violación de fk' significa que el cliente no existe.
+			//Se lanza el error 'cliente_no_existe'.
+			if ( new OracleSGBDErrorUtil().checkExceptionToCode( e, SGBDError.FK_VIOLATED)) {
+				throw new GestionMedicosException(GestionMedicosException.CLIENTE_NO_EXISTE);
+			}
+			//Si es cualquier otra excepción, se registra el mensaje y se lanza.
 			logger.error(e.getMessage());
 			throw e;
 		} finally {
 			//Se liberan los recursos.
 			if(rs!=null) rs.close();
 			if(st_select!=null) st_select.close();
-		}
-		
-		
+			if(st_insert!=null) st_insert.close();
+		}	
 	}
 	
 	public static void anular_consulta(String m_NIF_cliente, String m_NIF_medico,  
