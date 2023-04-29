@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -48,19 +49,34 @@ public class GestionMedicos {
 		
 		PoolDeConexiones pool = PoolDeConexiones.getInstance();
 		Connection con=null;
+		PreparedStatement st_select = null;
+		ResultSet rs = null;
 
 	
 		try{
 			con = pool.getConnection();
 			
+			//Se obtiene el id del médico. Se lanza la excepción 'medico_no_existe' si no existe.
+			st_select = con.prepareStatement("SELECT id_medico FROM MEDICO WHERE NIF=?");
+			st_select.setString(1, m_NIF_medico);
+			rs = st_select.executeQuery();
+			if(!rs.next())
+				throw new GestionMedicosException(GestionMedicosException.MEDICO_NO_EXISTE);
+			int num_medico = rs.getInt(1);
+			
 		} catch (SQLException e) {
-			//Completar por el alumno			
+			//Rollback con cualquier error.
+			con.rollback();
+			//Relanzar excepción.
+			if (e instanceof GestionMedicosException)
+				throw (GestionMedicosException)e;			
 			
 			logger.error(e.getMessage());
-			throw e;		
-
+			throw e;
 		} finally {
-			/*A rellenar por el alumno, liberar recursos*/
+			//Se liberan los recursos.
+			if(rs!=null) rs.close();
+			if(st_select!=null) st_select.close();
 		}
 		
 		
