@@ -125,6 +125,8 @@ public class GestionMedicos {
 		ResultSet rs_med = null;
 		PreparedStatement st_select_cli = null;
 		ResultSet rs_cli = null;
+		PreparedStatement st_select_cons = null;
+		ResultSet rs_cons = null;
 
 	
 		try{
@@ -145,6 +147,18 @@ public class GestionMedicos {
 			if(!rs_cli.next())
 				throw new GestionMedicosException(GestionMedicosException.CLIENTE_NO_EXISTE);
 			
+			//Se obtiene el id de la consulta si existe y no está anulada.
+			//Si está anulada o no existe la consulta, se lanza el error 'consulta_no_existe'.
+			st_select_cons = con.prepareStatement("SELECT id_consulta FROM CONSULTA WHERE fecha_consulta=?"+
+					" and NIF = ? and id_medico = ? and id_consulta not in (SELECT id_consulta from ANULACION)");
+			st_select_cons.setDate(1, new java.sql.Date(m_Fecha_Consulta.getTime()));
+			st_select_cons.setString(2, m_NIF_cliente);
+			st_select_cons.setInt(3, num_medico);
+			rs_cons = st_select_cons.executeQuery();
+			if (!rs_cons.next()) {
+				throw new GestionMedicosException(GestionMedicosException.CONSULTA_NO_EXISTE);
+			}
+			int num_consulta = rs_cons.getInt(1);
 		} catch (SQLException e) {
 			//Rollback con cualquier error.
 			con.rollback();
@@ -162,6 +176,8 @@ public class GestionMedicos {
 			if (st_select_med!=null) st_select_med.close();
 			if (rs_cli!=null) rs_cli.close();
 			if (st_select_cli!=null) st_select_cli.close();
+			if (rs_cons!=null) rs_cons.close();
+			if (st_select_cons!=null) st_select_cons.close();
 		}		
 	}
 	
