@@ -127,6 +127,7 @@ public class GestionMedicos {
 		ResultSet rs_cli = null;
 		PreparedStatement st_select_cons = null;
 		ResultSet rs_cons = null;
+		PreparedStatement st_insert = null;
 
 	
 		try{
@@ -159,17 +160,27 @@ public class GestionMedicos {
 				throw new GestionMedicosException(GestionMedicosException.CONSULTA_NO_EXISTE);
 			}
 			int num_consulta = rs_cons.getInt(1);
+			
+			//Se inserta la anulación.
+			st_insert = con.prepareStatement("INSERT INTO ANULACION VALUES (seq_anulacion.nextval,?,?,?)");
+			st_insert.setInt(1,num_consulta);
+			st_insert.setDate(2, new java.sql.Date(m_Fecha_Anulacion.getTime()));
+			st_insert.setString(3, motivo);
+			st_insert.executeQuery();
 		} catch (SQLException e) {
 			//Rollback con cualquier error.
 			con.rollback();
 			//Relanzar excepción.
 			if (e instanceof GestionMedicosException) {
 				throw (GestionMedicosException)e;
-			}			
-			
+			}
+			//Al insertar el registro de anulación, si el motivo es vacío se lanza la excepción 'motivo_vacio'.
+			if ( new OracleSGBDErrorUtil().checkExceptionToCode( e, SGBDError.NOT_NULL_VIOLATED)) {
+				throw new GestionMedicosException(GestionMedicosException.MOTIVO_VACIO);
+			}
+			//Si es cualquier otra excepción, se registra el mensaje y se lanza.
 			logger.error(e.getMessage());
-			throw e;		
-
+			throw e;
 		} finally {
 			//Se liberan los recursos.
 			if (rs_med!=null) rs_med.close();
@@ -178,6 +189,7 @@ public class GestionMedicos {
 			if (st_select_cli!=null) st_select_cli.close();
 			if (rs_cons!=null) rs_cons.close();
 			if (st_select_cons!=null) st_select_cons.close();
+			if (st_insert!=null) st_insert.close();
 		}		
 	}
 	
