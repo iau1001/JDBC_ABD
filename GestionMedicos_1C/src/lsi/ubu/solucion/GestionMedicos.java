@@ -128,6 +128,7 @@ public class GestionMedicos {
 		PreparedStatement st_select_cons = null;
 		ResultSet rs_cons = null;
 		PreparedStatement st_insert = null;
+		PreparedStatement st_update = null;
 
 	
 		try{
@@ -167,6 +168,20 @@ public class GestionMedicos {
 			st_insert.setDate(2, new java.sql.Date(m_Fecha_Anulacion.getTime()));
 			st_insert.setString(3, motivo);
 			st_insert.executeQuery();
+			
+			//Se actualiza el num. de consultas del médico si la fecha de anulación es como mínimo 2 días
+			//anterior a la fecha de consulta.
+			//Si la fecha de anulación no cumple ese mínimo, se lanza el error 'consulta_no_anula'.
+			st_update = con.prepareStatement("UPDATE MEDICO SET consultas=consultas-1 WHERE id_medico=?"+
+					" AND 2<=?");
+			st_update.setInt(1, num_medico);
+			st_update.setInt(2, Misc.howManyDaysBetween(m_Fecha_Consulta,m_Fecha_Anulacion));
+			int n = st_update.executeUpdate();
+			if (n==0) {
+				throw new GestionMedicosException(GestionMedicosException.CONSULTA_NO_ANULA);
+			}
+			
+			con.commit();
 		} catch (SQLException e) {
 			//Rollback con cualquier error.
 			con.rollback();
@@ -190,6 +205,8 @@ public class GestionMedicos {
 			if (rs_cons!=null) rs_cons.close();
 			if (st_select_cons!=null) st_select_cons.close();
 			if (st_insert!=null) st_insert.close();
+			if (st_update!=null) st_update.close();
+			if (con!=null) con.close();
 		}		
 	}
 	
