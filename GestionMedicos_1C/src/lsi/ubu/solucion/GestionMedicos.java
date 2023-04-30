@@ -218,6 +218,8 @@ public class GestionMedicos {
 		Connection con=null;
 		PreparedStatement st_med = null;
 		ResultSet rs_med = null;
+		PreparedStatement st_cons = null;
+		ResultSet rs_cons = null;
 
 	
 		try{
@@ -231,6 +233,21 @@ public class GestionMedicos {
 				throw new GestionMedicosException(GestionMedicosException.MEDICO_NO_EXISTE);
 			int num_medico = rs_med.getInt(1);
 			
+			//Se obtienen las consultas anuladas y no anuladas del médico junto a un campo que indica si está anulada.
+			st_cons = con.prepareStatement("SELECT consulta.id_consulta,fecha_consulta,"+
+			" id_medico, NIF, case when id_anulacion is null then 'No' else 'Sí' end"+
+			" from consulta left join anulacion on consulta.id_consulta=anulacion.id_consulta"+
+			" WHERE id_medico=? order by fecha_consulta");
+			st_cons.setInt(1, num_medico);
+			rs_cons = st_cons.executeQuery();
+			//Se muestran las consultas del médico junto a una columna que indica si están anuladas o no.
+			System.out.println("IDCONSULTA"+"\t"+"FECHA"+"\t\t"+"IDMEDICO"+"\t"+"NIFCLIENTE"+"\t"+"ANULADA");
+			while (rs_cons.next()) {
+				System.out.println(rs_cons.getInt(1) + "\t\t" + rs_cons.getDate(2) +"\t"+
+						rs_cons.getInt(3)+"\t\t"+rs_cons.getString(4)+"\t"+rs_cons.getString(5));
+			}
+			
+			con.commit();
 		} catch (SQLException e) {
 			//Rollback con cualquier error.
 			con.rollback();
@@ -245,6 +262,9 @@ public class GestionMedicos {
 			//Se liberan los recursos.
 			if (rs_med!=null) rs_med.close();
 			if (st_med!=null) st_med.close();
+			if (rs_cons!=null) rs_cons.close();
+			if (st_cons!=null) st_cons.close();
+			if (con!=null) con.close();
 		}		
 	}
 	
