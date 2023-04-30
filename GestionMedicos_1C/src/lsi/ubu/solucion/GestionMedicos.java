@@ -216,19 +216,35 @@ public class GestionMedicos {
 				
 		PoolDeConexiones pool = PoolDeConexiones.getInstance();
 		Connection con=null;
+		PreparedStatement st_med = null;
+		ResultSet rs_med = null;
 
 	
 		try{
 			con = pool.getConnection();
 			
-		} catch (SQLException e) {
-			//Completar por el alumno			
+			//Se obtiene el id del médico. Se lanza la excepción 'medico_no_existe' si no existe.
+			st_med = con.prepareStatement("SELECT id_medico FROM MEDICO WHERE NIF=?");
+			st_med.setString(1, m_NIF_medico);
+			rs_med = st_med.executeQuery();
+			if(!rs_med.next())
+				throw new GestionMedicosException(GestionMedicosException.MEDICO_NO_EXISTE);
+			int num_medico = rs_med.getInt(1);
 			
+		} catch (SQLException e) {
+			//Rollback con cualquier error.
+			con.rollback();
+			//Relanzar excepción.
+			if (e instanceof GestionMedicosException) {
+				throw (GestionMedicosException)e;
+			}
+			//Si es cualquier otra excepción, se registra el mensaje y se lanza.
 			logger.error(e.getMessage());
-			throw e;		
-
+			throw e;
 		} finally {
-			/*A rellenar por el alumno, liberar recursos*/
+			//Se liberan los recursos.
+			if (rs_med!=null) rs_med.close();
+			if (st_med!=null) st_med.close();
 		}		
 	}
 	
