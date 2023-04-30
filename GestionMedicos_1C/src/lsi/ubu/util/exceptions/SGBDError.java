@@ -12,6 +12,7 @@ public enum SGBDError {
 	FK_VIOLATED, // Violación de clave foránea
 	PK_VIOLATED, // Violación de clave primaria
 	NOT_EXISTS_SEQUENCE, // No existe la secuencia utilizada
+	NOT_NULL_VIOLATED, //Violacion de not null
 	// Añadir antes de esta línea si fuera necesario
 	
 	UNKNOWN; // No determinado.
