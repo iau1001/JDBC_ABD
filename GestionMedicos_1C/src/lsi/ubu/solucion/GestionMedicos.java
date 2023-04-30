@@ -123,6 +123,8 @@ public class GestionMedicos {
 		Connection con=null;
 		PreparedStatement st_select_med = null;
 		ResultSet rs_med = null;
+		PreparedStatement st_select_cli = null;
+		ResultSet rs_cli = null;
 
 	
 		try{
@@ -135,6 +137,13 @@ public class GestionMedicos {
 			if(!rs_med.next())
 				throw new GestionMedicosException(GestionMedicosException.MEDICO_NO_EXISTE);
 			int num_medico = rs_med.getInt(1);
+			
+			//Se comprueba si existe el cliente. Si no existe se lanza el error 'cliente_no_existe'.
+			st_select_cli = con.prepareStatement("SELECT NIF FROM CLIENTE WHERE NIF=?");
+			st_select_cli.setString(1,m_NIF_cliente);
+			rs_cli = st_select_cli.executeQuery();
+			if(!rs_cli.next())
+				throw new GestionMedicosException(GestionMedicosException.CLIENTE_NO_EXISTE);
 			
 		} catch (SQLException e) {
 			//Rollback con cualquier error.
@@ -151,6 +160,8 @@ public class GestionMedicos {
 			//Se liberan los recursos.
 			if (rs_med!=null) rs_med.close();
 			if (st_select_med!=null) st_select_med.close();
+			if (rs_cli!=null) rs_cli.close();
+			if (st_select_cli!=null) st_select_cli.close();
 		}		
 	}
 	
