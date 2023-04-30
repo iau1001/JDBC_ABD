@@ -20,6 +20,7 @@ public class OracleSGBDErrorUtil implements SGBDErrorUtil {
 	private static final int PK_VIOLATED = 1;
 	private static final int FK_VIOLATED = 2291;
 	private static final int NOT_EXISTS_SEQUENCE = 2289;
+	private static final int NOT_NULL_VIOLATED = 1400;
 	// Añadir según sea necesario, por parte del alumno...
 
 	/**
@@ -46,6 +47,8 @@ public class OracleSGBDErrorUtil implements SGBDErrorUtil {
 			return SGBDError.PK_VIOLATED;
 		case NOT_EXISTS_SEQUENCE:
 			return SGBDError.NOT_EXISTS_SEQUENCE;
+		case NOT_NULL_VIOLATED:
+			return SGBDError.NOT_NULL_VIOLATED;
 		}
 		return SGBDError.UNKNOWN;
 	}
