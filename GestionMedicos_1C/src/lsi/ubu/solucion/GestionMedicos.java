@@ -51,9 +51,10 @@ public class GestionMedicos {
 		Connection con=null;
 		PreparedStatement st_select = null;
 		PreparedStatement st_insert = null;
+		PreparedStatement st_update = null;
 		ResultSet rs = null;
-
-	
+		
+		
 		try{
 			con = pool.getConnection();
 			
@@ -73,6 +74,23 @@ public class GestionMedicos {
 			st_insert.setString(3,m_NIF_cliente);
 			st_insert.executeUpdate();
 			
+			//Se actualiza el num. de consultas del médico si no existe otra consulta no anulada en la misma fecha.
+			//Si existe otra consulta no anulada en la misma fecha se lanza el error 'medico_ocupado'.
+			st_update = con.prepareStatement("UPDATE MEDICO SET consultas=consultas+1 WHERE id_medico=?"+
+					" and (SELECT COUNT(*) FROM CONSULTA join ANULACION ON consulta.id_consulta=anulacion.id_consulta"+
+					" where fecha_consulta=? and id_medico=?)+1=(SELECT COUNT(*) FROM CONSULTA WHERE "+
+					" fecha_consulta=? and id_medico=?)");
+			st_update.setInt(1, num_medico);
+			st_update.setDate(2, m_sqlFecha);
+			st_update.setInt(3, num_medico);
+			st_update.setDate(4, m_sqlFecha);
+			st_update.setInt(5, num_medico);
+			int n = st_update.executeUpdate();
+			if (n==0) {
+				throw new GestionMedicosException(GestionMedicosException.MEDICO_OCUPADO);
+			}
+			
+			con.commit();
 		} catch (SQLException e) {
 			//Rollback con cualquier error.
 			con.rollback();
@@ -92,6 +110,8 @@ public class GestionMedicos {
 			if(rs!=null) rs.close();
 			if(st_select!=null) st_select.close();
 			if(st_insert!=null) st_insert.close();
+			if(st_update!=null) st_update.close();
+			if(con!=null) con.close();
 		}	
 	}
 	
